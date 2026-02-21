@@ -10,7 +10,7 @@
 src/xr/
   __init__.py          # version
   cli.py               # click entry point, wires all commands
-  auth.py              # credential loading (TOML, env, legacy) + bearer token
+  auth.py              # credential loading (TOML, env) + bearer token
   config.py            # TOML config with XDG paths + env overrides
   api.py               # HTTP client with rate limit retry
   cache.py             # SQLite cache with TTL per resource type
@@ -57,10 +57,9 @@ All tests use mocks for API calls. No live API access needed for tests.
 
 ## Auth
 
-Three credential sources, checked in order:
+Two credential sources, checked in order:
 1. Environment: `XR_CONSUMER_KEY` / `XR_CONSUMER_SECRET`
 2. TOML: `~/.config/xr/credentials.toml`
-3. Legacy: `~/charlie/.env.x-api` (Charlie-specific, backward compat)
 
 Bearer token is generated fresh each session via OAuth 2.0 client_credentials flow.
 

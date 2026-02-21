@@ -17,18 +17,8 @@ def test_load_from_env(monkeypatch, tmp_path):
     assert key == "envkey"
     assert secret == "envsecret"
 
-def test_load_from_legacy_env_file(tmp_path):
-    legacy = tmp_path / ".env.x-api"
-    legacy.write_text("X_API_CONSUMER_KEY=legacykey\nX_API_CONSUMER_SECRET=legacysecret\n")
-    key, secret = load_credentials(tmp_path / "nonexistent.toml", legacy_path=legacy)
-    assert key == "legacykey"
-    assert secret == "legacysecret"
-
 def test_load_missing_raises(monkeypatch, tmp_path):
     monkeypatch.delenv("XR_CONSUMER_KEY", raising=False)
     monkeypatch.delenv("XR_CONSUMER_SECRET", raising=False)
     with pytest.raises(CredentialError):
-        load_credentials(
-            tmp_path / "nonexistent.toml",
-            legacy_path=tmp_path / "nonexistent.env",
-        )
+        load_credentials(tmp_path / "nonexistent.toml")

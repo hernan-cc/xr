@@ -14,14 +14,10 @@ def _credentials_path() -> Path:
     xdg = os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))
     return Path(xdg) / "xr" / "credentials.toml"
 
-def _legacy_path() -> Path:
-    return Path.home() / "charlie" / ".env.x-api"
-
 def load_credentials(
     path: Path | None = None,
-    legacy_path: Path | None = None,
 ) -> tuple[str, str]:
-    """Load consumer key and secret. Priority: env vars > toml > legacy .env file."""
+    """Load consumer key and secret. Priority: env vars > toml."""
     # 1. Environment variables
     env_key = os.environ.get("XR_CONSUMER_KEY")
     env_secret = os.environ.get("XR_CONSUMER_SECRET")
@@ -36,21 +32,6 @@ def load_credentials(
         creds = data.get("credentials", {})
         key = creds.get("consumer_key")
         secret = creds.get("consumer_secret")
-        if key and secret:
-            return key, secret
-
-    # 3. Legacy .env.x-api
-    lp = legacy_path or _legacy_path()
-    if lp.exists():
-        kvs = {}
-        with open(lp) as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    k, v = line.split("=", 1)
-                    kvs[k.strip()] = v.strip()
-        key = kvs.get("X_API_CONSUMER_KEY")
-        secret = kvs.get("X_API_CONSUMER_SECRET")
         if key and secret:
             return key, secret
 
