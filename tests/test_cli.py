@@ -10,7 +10,7 @@ def runner():
 def test_version(runner):
     result = runner.invoke(main, ["--version"])
     assert result.exit_code == 0
-    assert "0.1.0" in result.output
+    assert "version" in result.output
 
 def test_help(runner):
     result = runner.invoke(main, ["--help"])

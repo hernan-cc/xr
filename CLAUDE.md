@@ -65,7 +65,7 @@ Bearer token is generated fresh each session via OAuth 2.0 client_credentials fl
 
 ## X API constraints
 
-- **Basic tier**: ~15,000 reads/month, 450 requests/15min per endpoint
+- **Pay-per-use**: $0.005/post read, $0.010/user lookup, 2M post reads/month cap
 - **Search window**: 7 days only (recent search, not full archive)
 - **max_results**: minimum 10, maximum 100 per request
 - **Liked tweets endpoint**: requires User Context OAuth (not supported, app-only auth only)

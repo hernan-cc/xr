@@ -1,8 +1,10 @@
 # xr — X Research CLI
 
-Research people and topics on X (Twitter) from the command line.
+Research people and topics on X (Twitter) from the command line. Built for AI agents and human researchers alike.
 
-`xr` uses the X API v2 to search tweets, look up profiles, pull timelines, and track volume — all with SQLite caching so you don't burn through your API quota.
+`xr` gives AI agents (Claude Code, OpenAI Codex, custom agents) structured access to X data through simple CLI commands. Markdown output with YAML frontmatter makes results easy to parse and reason about. SQLite caching prevents redundant API calls — critical when agents run research loops.
+
+Also works great for humans who prefer terminals over browser tabs.
 
 ## Install
 
@@ -102,6 +104,39 @@ xr counts "AI agents" --granularity hour
 
 Shows tweet volume over time. Useful for spotting trends.
 
+## AI Agent Usage
+
+`xr` is designed to be called by AI agents as a tool. Output is structured markdown that LLMs parse naturally.
+
+**Example: Claude Code skill**
+
+The repo includes a sample skill at [`skills/research-x/SKILL.md`](skills/research-x/SKILL.md) that implements a structured research workflow:
+
+1. Clarify scope (person, topic, or both)
+2. Fetch data via `xr` commands
+3. Analyze patterns and engagement
+4. Save findings to a research note
+
+**Why CLI over API wrappers:**
+
+- **No SDK dependency** — any agent that can run shell commands can use `xr`
+- **Cache prevents waste** — agents in loops don't burn credits re-fetching the same data
+- **Markdown output** — LLMs parse it natively, no JSON wrangling needed
+- **`--pretty` for JSON** — when agents need structured data, it's one flag away
+
+**Example agent workflow:**
+
+```bash
+# Agent researches a person
+xr user naval                                    # profile
+xr timeline naval --top --no-rt --max 20         # what they post about
+xr search "from:naval AI" --max 20               # their takes on a topic
+
+# Agent researches a topic
+xr search "AI regulation" --top --max 20         # top tweets
+xr counts "AI regulation" --granularity day      # volume trend
+```
+
 ## Global flags
 
 | Flag | Description |
@@ -169,9 +204,19 @@ default_lang = ""
 default_max = 20
 ```
 
-## API tier
+## API pricing
 
-`xr` works with the X API v2 Basic tier ($200/month, ~15,000 reads/month). The cache helps you stay well under budget for research workflows.
+X API v2 uses pay-per-use pricing — no monthly subscription. You buy credits in the [Developer Console](https://console.x.com) and they're deducted per request:
+
+| Action | Cost |
+|--------|------|
+| Read a post | $0.005 |
+| User lookup | $0.010 |
+| Create a post | $0.010 |
+
+Monthly cap: 2M post reads. Resources are deduplicated within a 24h UTC window (re-fetching the same post doesn't double-charge).
+
+The SQLite cache helps keep costs low — repeated lookups hit local cache, not the API.
 
 Rate limits are handled automatically — on HTTP 429, `xr` waits for the reset window and retries (up to 3 times).
 
