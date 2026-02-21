@@ -31,7 +31,7 @@ def fetch_search(
         "tweet.fields": TWEET_FIELDS,
         "expansions": "author_id",
         "user.fields": USER_FIELDS,
-        "max_results": min(max_results, 100),
+        "max_results": max(min(max_results, 100), 10),
     }
     if sort == "relevancy":
         params["sort_order"] = "relevancy"
