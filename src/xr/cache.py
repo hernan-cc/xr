@@ -49,6 +49,11 @@ class Cache:
                 data TEXT NOT NULL,
                 fetched_at REAL NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS articles (
+                article_id TEXT PRIMARY KEY,
+                data TEXT NOT NULL,
+                fetched_at REAL NOT NULL
+            );
         """)
 
     def _is_fresh(self, fetched_at: float, ttl: int) -> bool:
@@ -141,13 +146,33 @@ class Cache:
         )
         self.conn.commit()
 
+    # --- Articles ---
+    def get_article(self, article_id: str, ttl: int) -> dict | None:
+        if not self.enabled or not self.conn:
+            return None
+        row = self.conn.execute(
+            "SELECT data, fetched_at FROM articles WHERE article_id = ?", (article_id,)
+        ).fetchone()
+        if row and self._is_fresh(row[1], ttl):
+            return json.loads(row[0])
+        return None
+
+    def put_article(self, article_id: str, data: dict):
+        if not self.enabled or not self.conn:
+            return
+        self.conn.execute(
+            "INSERT OR REPLACE INTO articles (article_id, data, fetched_at) VALUES (?, ?, ?)",
+            (article_id, json.dumps(data), time.time()),
+        )
+        self.conn.commit()
+
     def cleanup(self, max_size_mb: int = 50):
         """Remove old entries if cache exceeds max size."""
         if not self.enabled or not self.conn:
             return
         size = self.path.stat().st_size / (1024 * 1024) if self.path.exists() else 0
         if size > max_size_mb:
-            for table in ("tweets", "searches", "users", "counts"):
+            for table in ("tweets", "searches", "users", "counts", "articles"):
                 self.conn.execute(f"""
                     DELETE FROM {table} WHERE rowid IN (
                         SELECT rowid FROM {table} ORDER BY fetched_at ASC

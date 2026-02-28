@@ -2,7 +2,7 @@
 from __future__ import annotations
 from datetime import date
 from xr import __version__
-from xr.models import Tweet, User, SearchResult, CountResult
+from xr.models import Tweet, User, SearchResult, CountResult, Article
 
 def _frontmatter(type_: str, **extra) -> str:
     lines = ["---", f"type: {type_}"]
@@ -96,4 +96,53 @@ def format_counts(result: CountResult) -> str:
     for bucket in result.buckets:
         lines.append(f"| {bucket.start[:10]} | {bucket.count} |")
     lines.append(f"\n**Total**: {result.total} tweets")
+    return "\n".join(lines) + "\n"
+
+
+def format_article(article: Article) -> str:
+    fm = _frontmatter(
+        "x-article",
+        article_id=f'"{article.id}"',
+        username=article.username,
+        has_article_metadata=article.has_article_metadata
+    )
+
+    if article.has_article_metadata and article.title:
+        # Format as article with full metadata
+        lines = [
+            fm, "",
+            f"# {article.title}", "",
+            f"**Author**: @{article.username} ({article.author_name})",
+            f"**Date**: {article.datetime_str}",
+        ]
+        if article.url:
+            lines.append(f"**Article URL**: {article.url}")
+        if article.description:
+            lines.extend(["", "## Description", "", article.description])
+        if article.text:
+            lines.extend(["", "## Tweet Text", "", article.text])
+    else:
+        # Format as tweet with extracted URL
+        lines = [
+            fm, "",
+            f"# Article/Link Tweet by @{article.username}", "",
+            article.text, "",
+            f"**Author**: @{article.username} ({article.author_name})",
+            f"**Date**: {article.datetime_str}",
+        ]
+        if article.url:
+            lines.append(f"**Shared URL**: {article.url}")
+
+    if article.image_url:
+        lines.extend(["", f"**Image**: {article.image_url}"])
+
+    lines.extend([
+        "",
+        f"**Metrics**: {article.likes:,} likes · {article.retweets:,} retweets · {article.replies:,} replies",
+    ])
+    if article.impressions:
+        lines.append(f"**Impressions**: {article.impressions:,}")
+
+    lines.append(f"\n**Tweet URL**: https://x.com/{article.username}/status/{article.id}")
+
     return "\n".join(lines) + "\n"

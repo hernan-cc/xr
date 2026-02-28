@@ -13,7 +13,7 @@ from xr.cache import Cache
 from xr.config import Config
 from xr.formatters.markdown import (
     format_tweet, format_user, format_search, format_thread,
-    format_timeline, format_followers, format_counts,
+    format_timeline, format_followers, format_counts, format_article,
 )
 from xr.formatters.json_fmt import format_json
 
@@ -225,6 +225,27 @@ def counts(ctx, query, granularity):
     else:
         md = format_counts(result)
         _output(ctx, md, f"counts-{query[:50].replace(' ', '-')}.md")
+
+@main.command()
+@click.argument("input_str")
+@click.pass_context
+def article(ctx, input_str):
+    """Fetch an article by ID or URL."""
+    from xr.commands.article import fetch_article, extract_article_id
+    client, cache = _get_client_and_cache(ctx)
+    config = ctx.obj["config"]
+    article_id = extract_article_id(input_str)
+    if ctx.obj["pretty"]:
+        data = client.get(f"tweets/{article_id}", {
+            "tweet.fields": "created_at,author_id,text,public_metrics,entities,article",
+            "expansions": "author_id",
+            "user.fields": "username,name,verified",
+        })
+        _output(ctx, format_json(data), f"article-{article_id}.json")
+    else:
+        a = fetch_article(client, cache, article_id, config.cache_ttl_tweets)
+        md = format_article(a)
+        _output(ctx, md, f"article-{a.username}-{a.id}.md")
 
 @main.group()
 def auth():

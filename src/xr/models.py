@@ -134,3 +134,73 @@ class CountResult:
     granularity: str
     buckets: list[CountBucket]
     total: int
+
+
+@dataclass
+class Article:
+    id: str
+    title: str
+    description: str
+    url: str
+    text: str
+    image_url: str | None = None
+    created_at: str = ""
+    author_id: str = ""
+    username: str = ""
+    author_name: str = ""
+    likes: int = 0
+    retweets: int = 0
+    replies: int = 0
+    quotes: int = 0
+    bookmarks: int = 0
+    impressions: int = 0
+    has_article_metadata: bool = False
+
+    @classmethod
+    def from_api(cls, data: dict, includes: dict | None = None) -> Article:
+        includes = includes or {}
+        users = _build_users_map(includes)
+        author = users.get(data.get("author_id", ""), {})
+        username = author.get("username", "unknown")
+        metrics = data.get("public_metrics", {})
+        article_data = data.get("article", {})
+        has_article = bool(article_data)
+
+        # Extract URL from entities if present
+        entities = data.get("entities", {})
+        urls = entities.get("urls", [])
+        extracted_url = urls[0].get("expanded_url", "") if urls else ""
+
+        return cls(
+            id=data["id"],
+            title=article_data.get("title", ""),
+            description=article_data.get("description", ""),
+            url=article_data.get("url", extracted_url),
+            text=data.get("text", ""),
+            image_url=article_data.get("image_url"),
+            created_at=data.get("created_at", ""),
+            author_id=data.get("author_id", ""),
+            username=username,
+            author_name=author.get("name", "Unknown"),
+            likes=metrics.get("like_count", 0),
+            retweets=metrics.get("retweet_count", 0),
+            replies=metrics.get("reply_count", 0),
+            quotes=metrics.get("quote_count", 0),
+            bookmarks=metrics.get("bookmark_count", 0),
+            impressions=metrics.get("impression_count", 0),
+            has_article_metadata=has_article,
+        )
+
+    @property
+    def date(self) -> str:
+        if self.created_at:
+            dt = datetime.fromisoformat(self.created_at.replace("Z", "+00:00"))
+            return dt.strftime("%Y-%m-%d")
+        return "unknown"
+
+    @property
+    def datetime_str(self) -> str:
+        if self.created_at:
+            dt = datetime.fromisoformat(self.created_at.replace("Z", "+00:00"))
+            return dt.strftime("%Y-%m-%d %H:%M UTC")
+        return "unknown"
